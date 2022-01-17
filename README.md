@@ -1,4 +1,4 @@
-This project was bootstrapped with [Create Eth App](https://github.com/paulrberg/create-eth-app).
+This project was bootstrapped with [Create Eth App](https://github.com/paulrberg/create-eth-app) and custom for my personal usage with Material UI, react router, and redux
 
 ## Project Structure
 
@@ -35,14 +35,19 @@ my-eth-app
     │   │   ├── manifest.json
     │   │   └── robots.txt
     │   └── src
-    │       ├── App.css
-    │       ├── App.js
-    │       ├── App.test.js
-    │       ├── ethereumLogo.svg
-    │       ├── index.css
-    │       ├── index.js
-    │       ├── serviceWorker.js
-    │       └── setupTests.js
+    │       ├── assets/
+    │       │  ├── images/
+    │       │  └── styles/
+    │       │      └── index.css
+    │       ├── components/
+    │       ├── hooks
+    │       ├── configs
+    │       ├── pages
+    │       │   └── routes.tsx
+    │       ├── services
+    │       ├── store
+    │       ├── App.tsx
+    │       └── index.tsx
     └── subgraph
         ├── README.md
         ├── abis
@@ -55,8 +60,6 @@ my-eth-app
         │       └── transfers.ts
         └── subgraph.yaml
 ```
-
-Owing to this dependency on Yarn Workspaces, Create Eth App can't be used with npm.
 
 ## Available Scripts
 
