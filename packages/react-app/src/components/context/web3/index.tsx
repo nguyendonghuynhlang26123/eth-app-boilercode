@@ -3,6 +3,8 @@ import Web3Modal from 'web3modal';
 import { Web3ContextProps, Web3ProviderProps } from './type';
 import { ethers } from 'ethers';
 import { useTheme } from '@mui/material';
+import { toast } from 'react-toastify';
+import { useLoading } from 'hooks';
 const defaultValues: Web3ContextProps = {
   disconnect: () => {},
   showConnectModal: () => {},
@@ -10,12 +12,13 @@ const defaultValues: Web3ContextProps = {
 
 export const Web3Context = React.createContext<Web3ContextProps>(defaultValues);
 
-export const Web3ContextProvider = ({ autoLoad = true, network = 'mainnet', providerConfig, children }: Web3ProviderProps) => {
+export const Web3ContextProvider = ({ network = 'mainnet', providerConfig, children }: Web3ProviderProps) => {
   const theme: any = useTheme();
   const [provider, setProvider] = useState<ethers.providers.Web3Provider>();
   const [signer, setSigner] = useState<ethers.providers.JsonRpcSigner>();
   const [account, setAccount] = useState<string>('');
   const [ensName, setAccountEns] = useState<string>('');
+  const [, setLoading] = useLoading();
 
   // Web3Modal also supports many other wallets.
   // You can see other options at https://github.com/Web3Modal/web3modal
@@ -35,19 +38,43 @@ export const Web3ContextProvider = ({ autoLoad = true, network = 'mainnet', prov
     });
   }, [providerConfig, network, theme]);
 
-  // Open wallet selection modal.
-  const loadWeb3Modal = useCallback(async () => {
-    const newProvider = await web3Modal.connect();
-    const web3Provider = new ethers.providers.Web3Provider(newProvider);
-
+  const handleSyncProvider = async (web3Provider: ethers.providers.Web3Provider) => {
     const accounts = await web3Provider.listAccounts();
     const account = accounts[0];
-    let ensName = await web3Provider.lookupAddress(account);
+    let ensName = null;
+    try {
+      ensName = await web3Provider.lookupAddress(account);
+    } catch (err) {
+      console.log('WEB3 PROVIDER: This network does not support ENS lookup');
+    }
 
     setAccount(accounts[0]);
     setAccountEns(ensName ?? '');
-    setProvider(web3Provider);
     setSigner(web3Provider.getSigner());
+    setLoading(false);
+  };
+
+  // Open wallet selection modal.
+  const loadWeb3Modal = useCallback(async () => {
+    const newProvider = await web3Modal.connect();
+    setProvider(new ethers.providers.Web3Provider(newProvider));
+
+    newProvider.on('chainChanged', (chainId: string) => {
+      setProvider(new ethers.providers.Web3Provider(newProvider));
+      toast.info(`Chain switched to chain ${chainId}`);
+    });
+
+    newProvider.on('accountsChanged', () => {
+      setProvider(new ethers.providers.Web3Provider(newProvider));
+      toast.info('Account chained');
+    });
+
+    // Subscribe to session disconnection
+    newProvider.on('disconnect', (code: string, reason: string) => {
+      console.log(code, reason);
+      logoutOfWeb3Modal();
+      toast.info('Disconnect');
+    });
   }, [web3Modal]);
 
   const logoutOfWeb3Modal = useCallback(
@@ -58,12 +85,24 @@ export const Web3ContextProvider = ({ autoLoad = true, network = 'mainnet', prov
     [web3Modal],
   );
 
+  useEffect(() => {
+    setLoading(true);
+  }, []);
+
   // If autoLoad is enabled and the the wallet had been loaded before, load it automatically now.
   useEffect(() => {
-    if (autoLoad && web3Modal.cachedProvider) {
+    if (web3Modal.cachedProvider) {
       loadWeb3Modal();
+      console.group('Loading Web3 provider...');
+    } else setLoading(false);
+  }, [loadWeb3Modal, web3Modal, web3Modal.cachedProvider]);
+
+  useEffect(() => {
+    if (provider) {
+      setLoading(true);
+      handleSyncProvider(provider);
     }
-  }, [autoLoad, loadWeb3Modal, web3Modal, web3Modal.cachedProvider]);
+  }, [provider]);
 
   const value: Web3ContextProps = {
     ...defaultValues,

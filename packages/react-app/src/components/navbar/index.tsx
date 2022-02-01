@@ -31,6 +31,7 @@ import { matchPath, useLocation, useNavigate } from 'react-router-dom';
 import { navbarLayoutSx } from './style';
 import { NavbarProps } from './type';
 import EthereumLogo from 'assets/images/ethereumLogo.png';
+import Blockies from 'react-blockies';
 
 export const Navbar = ({ children, loading, account, ens, handleDisconnect, handleConnect }: NavbarProps) => {
   const trigger = useScrollTrigger({
@@ -98,13 +99,15 @@ export const Navbar = ({ children, loading, account, ens, handleDisconnect, hand
             ) : (
               <>
                 <Typography>
-                  Hello
                   <Tooltip title={copiedText ? 'Copied' : 'Copy account'}>
                     <Link underline="hover" color="primary" onClick={handleCopyAccount} href="/">
                       {ens ? ens : account.substring(0, 6) + '...' + account.substring(36)}
                     </Link>
                   </Tooltip>
                 </Typography>
+                <Avatar>
+                  <Blockies seed={account} size={10} scale={4} bgColor="#ffe" className="identicon" />
+                </Avatar>
                 <IconButton onClick={handleDisconnect}>
                   <Tooltip title="Disconnect">
                     <ExitToApp />

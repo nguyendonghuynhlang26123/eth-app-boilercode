@@ -9,6 +9,7 @@ import Backdrop from './Backdrop';
 import Typography from './Typography';
 import IconButton from './IconButton';
 import Autocomplete from './AutoComplete';
+import Stack from './Stack';
 
 // ----------------------------------------------------------------------
 
@@ -24,5 +25,6 @@ export default function ComponentsOverrides(theme: any) {
     Typography(theme),
     IconButton(theme),
     Autocomplete(theme),
+    Stack(theme),
   );
 }

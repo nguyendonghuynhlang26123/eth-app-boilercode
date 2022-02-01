@@ -10,7 +10,6 @@ export interface Web3ContextProps {
   showConnectModal: VoidFunction;
 }
 export interface Web3ProviderProps {
-  autoLoad?: boolean;
   network?: string;
   providerConfig: IProviderOptions;
   children: any;

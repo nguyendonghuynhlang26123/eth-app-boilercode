@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ethers } from 'ethers';
-import { Stack, Typography, Box } from '@mui/material';
+import { Stack, Typography, Box, Grid, Divider, Button } from '@mui/material';
 import { colors } from '@mui/material';
 import { InfoCard } from './subcomponents';
 import { SiEthereum } from 'react-icons/si';
@@ -8,36 +8,53 @@ import { FaMoneyBill } from 'react-icons/fa';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
 import { GiChaingun } from 'react-icons/gi';
 import { AppBreadcrumbs } from 'components';
-import { useWeb3Provider } from 'hooks';
+import { useUsdPrice, useWeb3Provider } from 'hooks';
+import { Add, Refresh } from '@mui/icons-material';
+import { gridContainerSx } from './style';
+import { TokenPanel } from './subcomponents/TokenPanel';
+import { TransferHistory } from './subcomponents/TransactionPanel';
+import Utils from 'common/utils';
 
-const prettyNum = (b: ethers.BigNumberish) => ethers.utils.commify(ethers.utils.formatEther(b));
+function truncate(str: string, maxDecimalDigits: number) {
+  if (str.includes('.')) {
+    const parts = str.split('.');
+    return parts[0] + '.' + parts[1].slice(0, maxDecimalDigits);
+  }
+  return str;
+}
+const prettyNum = (b: ethers.BigNumberish) => truncate(ethers.utils.formatEther(b), 2);
+
+interface SelectedContract {
+  symbol: string;
+  address: string;
+}
 
 const Dashboard = () => {
   const { provider, account, ens, signer } = useWeb3Provider();
-  /**
-      console.log("💵 yourLocalBalance", yourLocalBalance ? ethers.utils.formatEther(yourLocalBalance) : "...");
-      console.log("💵 yourMainnetBalance", yourMainnetBalance ? ethers.utils.formatEther(yourMainnetBalance) : "...");
-      console.log("📝 readContracts", readContracts);
-      console.log("🌍 DAI contract on mainnet:", mainnetContracts);
-      console.log("💵 yourMainnetDAIBalance", myMainnetDAIBalance);
-      console.log("🔐 writeContracts", writeContracts);
-   */
-  const fetchChainId = async () => {
+  const [usd] = useUsdPrice();
+  const [selectedToken, setSelectedToken] = React.useState<SelectedContract>();
+
+  const fetchChainId = useCallback(async () => {
     if (provider) {
       const result = await provider.getNetwork();
       return `${result.name} (${result.chainId})`;
     } else return '-';
-  };
+  }, [provider]);
 
   const fetchAddress = async () => {
     return ens || '-';
   };
 
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
     if (provider && account) {
       let result = await provider.getBalance(account);
       return prettyNum(result) + ' ETH';
     } else return '-';
+  }, [provider]);
+
+  const fetchUsdPrice = async () => {
+    if (usd) return usd + '$ / ETH';
+    else return '-';
   };
 
   return (
@@ -68,11 +85,33 @@ const Dashboard = () => {
         <InfoCard
           color={colors.green[600]}
           bgcolor={colors.green[50]}
-          title=""
+          title="ETH price (on mainnet)"
           icon={<FaMoneyBill size="1.6em" />}
-          fetchData={fetchChainId}
+          fetchData={fetchUsdPrice}
         />
       </Stack>
+
+      <Grid container spacing={2} sx={gridContainerSx}>
+        <Grid item xs={4}>
+          <TokenPanel
+            defaultSelected={-1}
+            onSelectedItem={(address: string, symbol: string) => {
+              setSelectedToken({
+                address,
+                symbol,
+              });
+            }}
+          />
+        </Grid>
+        <Grid item xs={8}>
+          <Box className="panel">
+            <Typography variant="h6" sx={{ px: 2, pb: 2 }}>
+              Recent Transactions (for the last 1000 blocks)
+            </Typography>
+            <TransferHistory {...selectedToken} />
+          </Box>
+        </Grid>
+      </Grid>
     </Box>
   );
 };

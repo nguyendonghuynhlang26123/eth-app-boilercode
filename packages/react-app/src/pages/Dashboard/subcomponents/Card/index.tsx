@@ -12,7 +12,7 @@ export const InfoCard = ({ bgcolor, color, icon, title, fetchData }: InfoCardPro
       direction="column"
       justifyContent="center"
       alignItems="center"
-      sx={{ bgcolor, color, borderRadius: 4, width: 250, height: 200, px: 4 }}
+      sx={{ bgcolor, color, borderRadius: 4, flex: 1, height: 150, px: 4, boxShadow: 1 }}
     >
       <Box
         sx={{
@@ -21,10 +21,10 @@ export const InfoCard = ({ bgcolor, color, icon, title, fetchData }: InfoCardPro
           border: 2,
           borderColor: color,
           alignItems: 'center',
-          width: 48,
-          height: 48,
+          width: 40,
+          height: 40,
           p: 0.5,
-          mb: 2,
+          mb: 1,
           justifyContent: 'center',
           color: color,
         }}

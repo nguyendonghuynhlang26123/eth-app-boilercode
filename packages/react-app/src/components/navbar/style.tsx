@@ -17,9 +17,14 @@ export const navbarLayoutSx: MultipleSxTypes = {
     justifyContent: 'flex-end',
     borderBottom: 1,
     borderColor: 'divider',
-    '& .MuiLink-root': {
-      ml: 0.5,
-      mr: 2,
+    '& .MuiAvatar-root': {
+      overflow: 'hidden',
+      bgcolor: 'white',
+      border: 2,
+      borderColor: 'divider',
+      mx: 1,
+      width: 32,
+      height: 32,
     },
   },
 
@@ -65,7 +70,7 @@ export const navbarLayoutSx: MultipleSxTypes = {
 
   main: {
     flexGrow: 1,
-    bgcolor: 'grey.50',
+    bgcolor: 'background.neutral',
     px: 3,
     mt: `${headerHeight}px`,
     minHeight: `calc(100vh - ${headerHeight}px)`,

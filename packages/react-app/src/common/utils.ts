@@ -1,63 +1,7 @@
+import { ethers } from "ethers";
+import moments from 'moment'
+
 class Utils {
-  static filterArrayByString(mainArr: any[], searchText: string): any[] {
-    if (searchText === '') {
-      return mainArr;
-    }
-
-    searchText = searchText.toLowerCase();
-
-    return mainArr.filter((itemObj) => {
-      return this.searchInObj(itemObj, searchText);
-    });
-  }
-
-  static searchInObj(itemObj: Record<string, any>, searchText: string): boolean {
-    for (const prop in itemObj) {
-      if (!itemObj.hasOwnProperty(prop)) {
-        continue;
-      }
-
-      const value = itemObj[prop];
-
-      if (typeof value === 'string') {
-        if (this.searchInString(value, searchText)) {
-          return true;
-        }
-      } else if (Array.isArray(value)) {
-        if (this.searchInArray(value, searchText)) {
-          return true;
-        }
-      }
-
-      if (typeof value === 'object') {
-        if (this.searchInObj(value, searchText)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  static searchInArray(arr: any[], searchText: string): boolean {
-    for (const value of arr) {
-      if (typeof value === 'string') {
-        if (this.searchInString(value, searchText)) {
-          return true;
-        }
-      }
-
-      if (typeof value === 'object') {
-        if (this.searchInObj(value, searchText)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  static searchInString(value: string, searchText: string): boolean {
-    return value.toLowerCase().includes(searchText);
-  }
 
   static generateGUID(): string {
     function S4() {
@@ -67,14 +11,6 @@ class Utils {
     }
 
     return S4() + S4();
-  }
-
-  static toggleInArray(item: any, array: any[]): void {
-    if (array.indexOf(item) === -1) {
-      array.push(item);
-    } else {
-      array.splice(array.indexOf(item), 1);
-    }
   }
 
   static sanitizeString(text: string): string {
@@ -93,51 +29,6 @@ class Utils {
       .toLowerCase()
       .replace(/ /g, '-')
       .replace(/[^\w-]+/g, '');
-  }
-
-  static findById(o: { id: object; [k: string]: any }, id: object): object | null {
-    //Early return
-    if (o.id === id) {
-      return o;
-    }
-    let result, p;
-    for (p in o) {
-      if (o.hasOwnProperty(p) && typeof o[p] === 'object') {
-        result = this.findById(o[p], id);
-        if (result) {
-          return result;
-        }
-      }
-    }
-    return null;
-  }
-
-  static randomMatColor(hue: string): string[] {
-    hue = hue ? hue : '400';
-    const mainColors = [
-      'amber',
-      'blue',
-      'blueGrey',
-      'brown',
-      'common',
-      'cyan',
-      'deepOrange',
-      'deepPurple',
-      'green',
-      'grey',
-      'indigo',
-      'lightBlue',
-      'lightGreen',
-      'lime',
-      'orange',
-      'pink',
-      'purple',
-      'red',
-      'teal',
-      'yellow',
-    ];
-    const randomColor = mainColors[Math.floor(Math.random() * mainColors.length)];
-    return [randomColor, hue];
   }
 
   static getParameterByName(name: string, url: string) {
@@ -160,17 +51,32 @@ class Utils {
     return [d.getDate(), d.getMonth() + 1, d.getFullYear()].join('/') + ' ' + [d.getHours(), d.getMinutes()].join(':');
   }
 
-  static getInvitationLinkFormat(id: string, code: string): string {
-    return `${window.location.origin}/#/classes/join?classId=${id}&role=STUDENT&code=${code}`;
-  }
-
   static toCapitalize(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  static getFullName(firstName: string | undefined, lastName: string | undefined): string {
-    return firstName && lastName ? `${Utils.toCapitalize(firstName)} ${Utils.toCapitalize(lastName)}` : ' ';
+  static async nullIfError(fn: Promise<any>, msg?: string): Promise<any> {
+    try {
+      const result = await fn;
+      return result;
+    } catch (err) {
+      console.error(err);
+    }
+    return null;
   }
+
+  static truncate(str: string, maxDecimalDigits: number) {
+    if (str.includes('.')) {
+      const parts = str.split('.');
+      return parts[0] + '.' + parts[1].slice(0, maxDecimalDigits);
+    }
+    return str;
+  }
+  static prettyNum = (b: ethers.BigNumberish) => Utils.truncate(ethers.utils.formatEther(b), 2);
+
+  static trimHash = (hash: string) => hash.substring(0, 6) + '...' + hash.slice(-4);
+
+  static timeAgo = (timeStamp: number) => moments(timeStamp).fromNow();
 }
 
 export default Utils;
