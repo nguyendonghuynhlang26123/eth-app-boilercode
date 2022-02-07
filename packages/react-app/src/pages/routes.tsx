@@ -6,6 +6,7 @@ import { LinearProgress } from '@mui/material';
 const MainLayout = React.lazy(() => import('./MainLayout'));
 // main screen
 const Dashboard = React.lazy(() => import('./Dashboard'));
+const Transfer = React.lazy(() => import('./Transfer'));
 
 //Error pages
 const NotFoundPage = React.lazy(() => import('./Errors/NotFound'));
@@ -29,6 +30,10 @@ const appRoutes = (isConnected: boolean, search: string, pathname: string): Rout
           path: '/',
           index: true,
           element: <Dashboard />,
+        },
+        {
+          path: 'common/transfer',
+          element: <Transfer />,
         },
       ],
     },

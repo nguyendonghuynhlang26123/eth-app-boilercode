@@ -14,5 +14,5 @@ export const gridContainerSx: SxType = {
     overflow: 'auto',
     position: 'relative',
   },
-  '& .MuiGrid-item:first-of-type': { pl: '0 !important' },
+  '& .MuiGrid-item.no-pad-left': { pl: '0 !important' },
 };

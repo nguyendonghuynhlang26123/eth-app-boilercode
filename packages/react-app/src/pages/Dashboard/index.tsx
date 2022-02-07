@@ -1,19 +1,17 @@
-import React, { useCallback } from 'react';
-import { ethers } from 'ethers';
-import { Stack, Typography, Box, Grid, Divider, Button } from '@mui/material';
-import { colors } from '@mui/material';
-import { InfoCard } from './subcomponents';
-import { SiEthereum } from 'react-icons/si';
-import { FaMoneyBill } from 'react-icons/fa';
-import { MdDriveFileRenameOutline } from 'react-icons/md';
-import { GiChaingun } from 'react-icons/gi';
-import { AppBreadcrumbs } from 'components';
-import { useUsdPrice, useWeb3Provider } from 'hooks';
-import { Add, Refresh } from '@mui/icons-material';
-import { gridContainerSx } from './style';
-import { TokenPanel } from './subcomponents/TokenPanel';
-import { TransferHistory } from './subcomponents/TransactionPanel';
+import { Box, Chip, colors, Grid, Stack, Typography } from '@mui/material';
 import Utils from 'common/utils';
+import { AppBreadcrumbs } from 'components';
+import { ethers } from 'ethers';
+import { useUsdPrice, useWeb3Provider } from 'hooks';
+import React, { useCallback } from 'react';
+import { FaMoneyBill } from 'react-icons/fa';
+import { GiChaingun } from 'react-icons/gi';
+import { MdDriveFileRenameOutline } from 'react-icons/md';
+import { SiEthereum } from 'react-icons/si';
+import { gridContainerSx } from './style';
+import { InfoCard, TransferHistory } from './subcomponents';
+import { TokenPanel } from './subcomponents/TokenPanel';
+import { TransactionHistory } from './subcomponents/TransactionPanel';
 
 function truncate(str: string, maxDecimalDigits: number) {
   if (str.includes('.')) {
@@ -24,15 +22,10 @@ function truncate(str: string, maxDecimalDigits: number) {
 }
 const prettyNum = (b: ethers.BigNumberish) => truncate(ethers.utils.formatEther(b), 2);
 
-interface SelectedContract {
-  symbol: string;
-  address: string;
-}
-
 const Dashboard = () => {
-  const { provider, account, ens, signer } = useWeb3Provider();
+  const { provider, account, ens } = useWeb3Provider();
   const [usd] = useUsdPrice();
-  const [selectedToken, setSelectedToken] = React.useState<SelectedContract>();
+  const [selectedToken, setSelectedToken] = React.useState<string>();
 
   const fetchChainId = useCallback(async () => {
     if (provider) {
@@ -50,7 +43,7 @@ const Dashboard = () => {
       let result = await provider.getBalance(account);
       return prettyNum(result) + ' ETH';
     } else return '-';
-  }, [provider]);
+  }, [provider, account]);
 
   const fetchUsdPrice = async () => {
     if (usd) return usd + '$ / ETH';
@@ -91,27 +84,39 @@ const Dashboard = () => {
         />
       </Stack>
 
-      <Grid container spacing={2} sx={gridContainerSx}>
-        <Grid item xs={4}>
-          <TokenPanel
-            defaultSelected={-1}
-            onSelectedItem={(address: string, symbol: string) => {
-              setSelectedToken({
-                address,
-                symbol,
-              });
-            }}
-          />
+      {provider ? (
+        <Grid container spacing={2} sx={gridContainerSx}>
+          <Grid item xs={12} className="no-pad-left">
+            <Box className="panel">
+              <Typography variant="h6" sx={{ pb: 2 }}>
+                Recent Transactions (for the last 1000 blocks)
+              </Typography>
+              <TransactionHistory />
+            </Box>
+          </Grid>
+          <Grid item xs={4} className="no-pad-left">
+            <TokenPanel
+              selectedAddress={selectedToken}
+              onSelectedItem={(address?: string) => {
+                setSelectedToken(address);
+              }}
+            />
+          </Grid>
+          <Grid item xs={8}>
+            <Box className="panel">
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Typography variant="h6" sx={{ px: 2, py: 1.5 }}>
+                  Recent Token Transfered (for the last 1000 blocks)
+                </Typography>
+                {selectedToken && <Chip label={Utils.trimHash(selectedToken)} onDelete={() => setSelectedToken(undefined)} />}
+              </Stack>
+              <TransferHistory address={selectedToken} />
+            </Box>
+          </Grid>
         </Grid>
-        <Grid item xs={8}>
-          <Box className="panel">
-            <Typography variant="h6" sx={{ px: 2, pb: 2 }}>
-              Recent Transactions (for the last 1000 blocks)
-            </Typography>
-            <TransferHistory {...selectedToken} />
-          </Box>
-        </Grid>
-      </Grid>
+      ) : (
+        <Typography sx={{ py: 2 }}>Please connect wallet to proceed</Typography>
+      )}
     </Box>
   );
 };

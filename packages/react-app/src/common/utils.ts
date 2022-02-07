@@ -60,7 +60,7 @@ class Utils {
       const result = await fn;
       return result;
     } catch (err) {
-      console.error(err);
+      console.warn(err);
     }
     return null;
   }
@@ -77,6 +77,17 @@ class Utils {
   static trimHash = (hash: string) => hash.substring(0, 6) + '...' + hash.slice(-4);
 
   static timeAgo = (timeStamp: number) => moments(timeStamp).fromNow();
+
+  static getFuncBySignature = async (sign: string) => {
+    if (sign.startsWith("0x")) sign = sign.slice(2);
+    const response = await (await fetch(`https://www.4byte.directory/api/v1/signatures?hex_signature=${sign}`)).json();
+    if (response.count === 0) return null;
+
+    //Preprocess return value
+    const text = response.results[0].text_signature;
+    const removeArgs = text.replace(/(\(.*\))/, '');
+    return removeArgs;
+  }
 }
 
 export default Utils;

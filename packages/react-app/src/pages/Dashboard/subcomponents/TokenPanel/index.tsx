@@ -2,7 +2,6 @@ import { Add, DeleteOutline, EditOutlined } from '@mui/icons-material';
 import {
   Avatar,
   Box,
-  Dialog,
   Divider,
   IconButton,
   List,
@@ -14,22 +13,18 @@ import {
   Typography,
 } from '@mui/material';
 import Coin from 'assets/images/coin.svg';
-import { interfaceId } from 'common/constants/interfaceId';
 import Utils from 'common/utils';
 import { BigNumber, ethers } from 'ethers';
 import { useDialog, useLocalStorage, useWeb3Provider } from 'hooks';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { TokenForm } from './subcomponents';
-import { TokenDetails } from './subcomponents/AddForm/type';
+import { TokenDetails } from './subcomponents/Form/type';
 import { StoredToken, TokenItemPropsType, TokenPanelPropsType } from './type';
 
 const abi = [
   // Get the account balance
   'function balanceOf(address) view returns (uint)',
-
-  // Check ERC20 / ERC721
-  'function supportsInterface(bytes4 interfaceId) view returns (bool) ',
 ];
 
 const TokenItem = ({ token, account, provider, selected, handleOnClick }: TokenItemPropsType) => {
@@ -43,25 +38,16 @@ const TokenItem = ({ token, account, provider, selected, handleOnClick }: TokenI
       .catch(() => {
         setError('Cannot find token balance');
       });
-  }, []);
-
-  const getTokenType = async () => {
-    // Note that this function only detected Openzeppelin version of ERC20 and ERC721 (implementing ERC165 is a must!);
-    for (const { type, id } of interfaceId) {
-      try {
-        const result = await Utils.nullIfError(contract.supportsInterface(id), 'Check Token Type');
-        if (result) return type;
-      } catch (err) {}
-    }
-    return '';
-  };
+  }, [account, contract]);
 
   return (
     <>
       <ListItem disablePadding>
         <ListItemButton selected={selected} onClick={handleOnClick}>
           <ListItemIcon>
-            <Avatar src={token.image ?? Coin} sx={{ width: 32, height: 32 }} />
+            <Avatar src={token.image} sx={{ width: 32, height: 32 }}>
+              <img src={Coin} alt="Coin" />
+            </Avatar>
           </ListItemIcon>
           <ListItemText
             primary={`${balance} ${token.symbol}`}
@@ -74,24 +60,16 @@ const TokenItem = ({ token, account, provider, selected, handleOnClick }: TokenI
   );
 };
 
-export const TokenPanel = ({ defaultSelected, onSelectedItem }: TokenPanelPropsType) => {
+export const TokenPanel = ({ selectedAddress, onSelectedItem }: TokenPanelPropsType) => {
   const [savedTokens, setTokenList] = useLocalStorage<StoredToken[]>('tokens', []);
   const { account, provider } = useWeb3Provider();
-  const [selected, setSelected] = useState<number>(defaultSelected);
   const [addForm, showAddForm] = useState<boolean>(false);
   const [editForm, showEditForm] = useState<boolean>(false);
   const [showDialog, DeleteDialog] = useDialog();
   const tokenList = React.useMemo(() => {
     if (savedTokens && provider && provider.network)
-      return savedTokens.filter((t: StoredToken) => t.network === provider.network.chainId.toString());
+      return savedTokens.filter((t: StoredToken) => t.network.toString() === provider.network.chainId.toString());
   }, [savedTokens, provider]);
-
-  useEffect(() => {
-    if (selected !== defaultSelected && selected !== -1) {
-      const selectedToken: StoredToken = tokenList[selected];
-      onSelectedItem(selectedToken.contractAddress, selectedToken.symbol);
-    }
-  }, [selected]);
 
   const handleSaveToken = (data: TokenDetails) => {
     if (provider) {
@@ -115,30 +93,35 @@ export const TokenPanel = ({ defaultSelected, onSelectedItem }: TokenPanelPropsT
   };
 
   const resetSelection = () => {
-    setSelected(defaultSelected);
+    onSelectedItem(undefined);
   };
 
-  const handleEditToken = (data: TokenDetails, index: number) => {
-    const newTokenList = [...tokenList];
-    newTokenList[index] = {
-      ...newTokenList[index],
-      contractAddress: data.address,
-      symbol: data.symbol,
-      tokenDecimal: data.decimal,
-      image: data.image_url,
-    };
+  const handleEditToken = (data: TokenDetails, address: string) => {
+    const newTokenList = savedTokens.map((t: StoredToken) => {
+      if (t.contractAddress === address)
+        return {
+          ...t,
+          contractAddress: data.address,
+          symbol: data.symbol,
+          tokenDecimal: data.decimal,
+          image: data.image_url,
+        };
+      return t;
+    });
     setTokenList(newTokenList);
   };
 
-  const handleDeleteToken = (index: number) => {
-    const newList = [...tokenList];
-    newList.splice(index, 1);
-    setTokenList(newList);
-    resetSelection();
+  const handleDeleteToken = (deleteAddress: string) => {
+    if (deleteAddress) {
+      const newList = savedTokens.filter((t: StoredToken) => t.contractAddress !== deleteAddress);
+      setTokenList(newList);
+      resetSelection();
+    }
   };
 
-  const getSelectedToken = (i: number): TokenDetails | undefined => {
-    const token: StoredToken = tokenList[i];
+  const getSelectedToken = (address: string): TokenDetails | undefined => {
+    if (!address) return undefined;
+    const token: StoredToken = tokenList.find((t: StoredToken) => t.contractAddress === address);
     if (!token) return undefined;
     return {
       address: token.contractAddress,
@@ -151,18 +134,18 @@ export const TokenPanel = ({ defaultSelected, onSelectedItem }: TokenPanelPropsT
   return (
     <Box className="panel">
       <Stack justifyContent="space-between">
-        <Typography variant="h6">Tokens</Typography>
+        <Typography variant="h6">ERC20 Tokens</Typography>
         <Stack spacing={1}>
-          <IconButton color="secondary" disabled={selected === -1} sx={{ borderRadius: 2 }} onClick={() => showEditForm(true)}>
+          <IconButton color="secondary" disabled={!selectedAddress} sx={{ borderRadius: 2 }} onClick={() => showEditForm(true)}>
             <EditOutlined />
           </IconButton>
           <IconButton
             color="error"
-            disabled={selected === -1}
+            disabled={!selectedAddress}
             sx={{ borderRadius: 2 }}
             onClick={() =>
-              showDialog(`Do you want to delete ${tokenList[selected].symbol} token?`, () => {
-                handleDeleteToken(selected);
+              showDialog(`Do you want to delete this token?`, () => {
+                handleDeleteToken(selectedAddress as string);
               })
             }
           >
@@ -184,8 +167,8 @@ export const TokenPanel = ({ defaultSelected, onSelectedItem }: TokenPanelPropsT
               account={account}
               provider={provider}
               key={i}
-              selected={selected === i}
-              handleOnClick={() => setSelected(i)}
+              selected={selectedAddress === token.contractAddress}
+              handleOnClick={() => onSelectedItem(token.contractAddress)}
             />
           ))}
         {tokenList && tokenList.length === 0 && (
@@ -200,9 +183,9 @@ export const TokenPanel = ({ defaultSelected, onSelectedItem }: TokenPanelPropsT
 
       {editForm && (
         <TokenForm
-          data={getSelectedToken(selected)}
+          data={getSelectedToken(selectedAddress as string)}
           show={editForm}
-          handleSave={(data) => handleEditToken(data, selected)}
+          handleSave={(data) => handleEditToken(data, selectedAddress as string)}
           handleBack={() => showEditForm(false)}
           title="Edit token"
         />

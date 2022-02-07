@@ -14,6 +14,7 @@ export const Web3Context = React.createContext<Web3ContextProps>(defaultValues);
 
 export const Web3ContextProvider = ({ network = 'mainnet', providerConfig, children }: Web3ProviderProps) => {
   const theme: any = useTheme();
+  const [autoloaded, setAutoloaded] = useState<boolean>(false);
   const [provider, setProvider] = useState<ethers.providers.Web3Provider>();
   const [signer, setSigner] = useState<ethers.providers.JsonRpcSigner>();
   const [account, setAccount] = useState<string>('');
@@ -91,9 +92,10 @@ export const Web3ContextProvider = ({ network = 'mainnet', providerConfig, child
 
   // If autoLoad is enabled and the the wallet had been loaded before, load it automatically now.
   useEffect(() => {
-    if (web3Modal.cachedProvider) {
+    if (!autoloaded && web3Modal.cachedProvider) {
       loadWeb3Modal();
       console.group('Loading Web3 provider...');
+      setAutoloaded(true);
     } else setLoading(false);
   }, [loadWeb3Modal, web3Modal, web3Modal.cachedProvider]);
 

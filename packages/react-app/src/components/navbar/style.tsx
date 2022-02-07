@@ -72,6 +72,7 @@ export const navbarLayoutSx: MultipleSxTypes = {
     flexGrow: 1,
     bgcolor: 'background.neutral',
     px: 3,
+    pb: 5,
     mt: `${headerHeight}px`,
     minHeight: `calc(100vh - ${headerHeight}px)`,
 

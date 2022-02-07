@@ -1,7 +1,7 @@
-import { Check, Error } from '@mui/icons-material';
-import { Chip, Link, Tooltip, Typography } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { Link, Tooltip, Typography } from '@mui/material';
+import { DataGrid, GridColDef, GridFilterModel } from '@mui/x-data-grid';
 import Utils from 'common/utils';
+import { ethers } from 'ethers';
 import { useEthScanProvider, useWeb3Provider } from 'hooks';
 import React from 'react';
 
@@ -13,49 +13,56 @@ interface TxHistory {
   from: string;
   to: string | undefined;
   value: string;
-  status: boolean;
-  confirmations: number;
-  type: string;
-  creates: string;
+  token: string;
+  contract: string;
 }
 
-const CONTRACT_CREATION = '📜 Contract Creation';
-
-export const TransactionHistory = () => {
+export const TransferHistory = ({ address }: { address?: string }) => {
   const { provider, account } = useWeb3Provider();
   const [ethScan, error] = useEthScanProvider(provider, ['kovan', 'ropsten', 'rinkeby']);
   const [data, setData] = React.useState<TxHistory[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
+  const [filtering, setFiltering] = React.useState<GridFilterModel>();
 
   React.useEffect(() => {
     setLoading(true);
     setData([]);
-    if (account && ethScan)
-      Utils.nullIfError(ethScan.getHistory(account, -1000)).then(async (response: any) => {
+    if (account && ethScan) {
+      const fetchingParams = {
+        action: 'tokentx',
+        address: account,
+        startblock: -1000,
+        endblock: 99999999,
+        sort: 'asc',
+      };
+      Utils.nullIfError(ethScan.fetch('account', fetchingParams)).then(async (response: any) => {
         const data: TxHistory[] = [];
         for (let t of response) {
-          const functionSignature = t.data.slice(0, 8);
-          const functionName =
-            (t.data === '0x' ? 'Transfer' : t.creates ? CONTRACT_CREATION : await Utils.getFuncBySignature(functionSignature)) ??
-            functionSignature;
           data.push({
             id: t.hash,
             hash: t.hash.toString(),
             block: Number(t.blockNumber),
-            time: Number(t.timestamp) * 1000,
+            time: Number(t.timeStamp) * 1000,
             from: t.from.toString(),
             to: t.to,
-            value: Utils.prettyNum(t.value) + ' ETH',
-            status: t.isError !== '0',
-            type: functionName,
-            confirmations: Number(t.confirmations),
-            creates: t.creates,
+            value: ethers.utils.formatUnits(t.value, Number(t.tokenDecimal)),
+            token: `${t.tokenSymbol} (${t.tokenName})`,
+            contract: t.contractAddress,
           });
         }
         setData(data);
         setLoading(false);
       });
+    }
   }, [account, ethScan]);
+
+  React.useEffect(() => {
+    if (address)
+      setFiltering({
+        items: [{ columnField: 'contract', operatorValue: 'contains', value: address }],
+      });
+    else setFiltering({ items: [] });
+  }, [address]);
 
   const HashLink = React.useCallback(
     (hash: string | undefined, type: 'address' | 'tx') => {
@@ -75,29 +82,6 @@ export const TransactionHistory = () => {
     [ethScan, account],
   );
 
-  const ContractCreationType = React.useCallback(
-    (contract: string | undefined) => {
-      if (contract && ethScan) {
-        const baseUrl = ethScan?.getBaseUrl().replace('api-', '');
-        return (
-          <Tooltip title={'Contract ' + contract} arrow>
-            <Chip
-              label={CONTRACT_CREATION}
-              size="small"
-              component="a"
-              clickable
-              href={`${baseUrl}/address/${contract}`}
-              rel="noreferrer noopener"
-              target="_blank"
-            />
-          </Tooltip>
-        );
-      }
-      return '-';
-    },
-    [ethScan],
-  );
-
   const columns: GridColDef[] = [
     {
       field: 'hash',
@@ -110,16 +94,7 @@ export const TransactionHistory = () => {
       field: 'time',
       headerName: 'Age',
       minWidth: 140,
-      valueFormatter: (params) => Utils.timeAgo(Number(params.value)),
-    },
-    {
-      field: 'type',
-      headerName: 'Type',
-      minWidth: 200,
-      renderCell: (params) => {
-        if (params.value === CONTRACT_CREATION) return ContractCreationType(params.row['creates']);
-        return <Chip label={params.value} size="small" />;
-      },
+      valueFormatter: (params) => Utils.timeAgo(params.value as number),
     },
     {
       field: 'from',
@@ -136,25 +111,20 @@ export const TransactionHistory = () => {
       renderCell: (params) => HashLink(params.value as string, 'address'),
     },
     {
+      field: 'contract',
+      headerName: 'Contract',
+      minWidth: 120,
+      renderCell: (params) => HashLink(params.value as string, 'address'),
+    },
+    {
       field: 'value',
       headerName: 'Value',
       minWidth: 60,
     },
     {
-      field: 'status',
-      headerName: 'Status',
-      width: 150,
-      renderCell: (params) => (
-        <Tooltip title={params.row['confirmations'] + ' confirmations'} arrow>
-          <Chip
-            icon={params.value ? <Check /> : <Error />}
-            label={params.value ? 'Success' : 'Failed'}
-            color={params.value ? 'success' : 'error'}
-            variant="outlined"
-            size="small"
-          />
-        </Tooltip>
-      ),
+      field: 'token',
+      headerName: 'Token',
+      minWidth: 200,
     },
   ];
 
@@ -173,6 +143,7 @@ export const TransactionHistory = () => {
             rowsPerPageOptions={[5]}
             loading={loading}
             disableSelectionOnClick
+            filterModel={filtering}
             initialState={{
               sorting: {
                 sortModel: [{ field: 'block', sort: 'desc' }],

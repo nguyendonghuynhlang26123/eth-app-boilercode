@@ -19,7 +19,8 @@
     "react-app:start": "yarn workspace @project/react-app start",
     "react-app:test": "yarn workspace @project/react-app test",
     "hardhat:chain": "yarn workspace @project/hardhat chain",
-    "hardhat:fund": "yarn workspace @project/hardhat fund"
+    "hardhat:fund": "yarn workspace @project/hardhat fund",
+    "hardhat:compile": "yarn workspace @project/hardhat compile"
   },
   "workspaces": {
     "packages": [

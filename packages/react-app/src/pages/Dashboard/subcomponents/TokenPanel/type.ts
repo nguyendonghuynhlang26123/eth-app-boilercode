@@ -17,6 +17,6 @@ export interface TokenItemPropsType {
 }
 
 export interface TokenPanelPropsType {
-  onSelectedItem: (address: string, symbol: string) => any;
-  defaultSelected: number;
+  onSelectedItem: (address?: string) => any;
+  selectedAddress?: string;
 }

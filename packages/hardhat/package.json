@@ -16,6 +16,8 @@
   },
   "scripts": {
     "fund": "npx hardhat funding --network localhost",
-    "chain": "npx hardhat node"
+    "chain": "npx hardhat node",
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/index.js"
   }
 }

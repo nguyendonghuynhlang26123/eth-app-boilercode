@@ -1,4 +1,5 @@
-import { AccountCircleOutlined, AdminPanelSettingsOutlined, BlockOutlined, HomeOutlined, SchoolOutlined } from '@mui/icons-material';
+import { BlockOutlined, HomeOutlined } from '@mui/icons-material';
+import { GrSend } from 'react-icons/gr';
 import { DrawerItemConfigType } from 'common/type';
 
 export const drawerConfigs: DrawerItemConfigType[] = [
@@ -9,37 +10,19 @@ export const drawerConfigs: DrawerItemConfigType[] = [
     type: 'item',
   },
   {
-    title: 'Account management',
+    title: 'Web3 common operations',
     type: 'group',
     children: [
       {
-        title: 'User accounts',
-        icon: <AccountCircleOutlined />,
-        href: '/user-account',
+        title: 'Transfer assets',
+        icon: <GrSend size={20} />,
+        href: '/common/transfer',
         type: 'item',
       },
       {
-        title: 'Admin accounts',
-        icon: <AdminPanelSettingsOutlined />,
-        href: '/admin-account',
-        type: 'item',
-      },
-      {
-        title: 'Black lists',
+        title: 'Contract',
         icon: <BlockOutlined />,
         href: '/blacklist',
-        type: 'item',
-      },
-    ],
-  },
-  {
-    title: 'Classroom management',
-    type: 'group',
-    children: [
-      {
-        title: 'Classrooms',
-        icon: <SchoolOutlined />,
-        href: '/classroom',
         type: 'item',
       },
     ],

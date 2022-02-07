@@ -25,7 +25,7 @@ export const useEthScanProvider = (
       if (allowedNetworks.includes(network.name)) {
         setErrorMessage(undefined);
         setEthScanProvider(new ethers.providers.EtherscanProvider(network.name, envConfig.ETHSCAN_KEY));
-      } else setErrorMessage(`Dapp only supports networks ${allowedNetworks.join(', ')}, provided: ${network.name}`);
+      } else setErrorMessage(`This feature only supports networks ${allowedNetworks.join(', ')}, provided: ${network.name}`);
     } else {
       setErrorMessage('Not found block scan for network id = ' + network.chainId);
     }
